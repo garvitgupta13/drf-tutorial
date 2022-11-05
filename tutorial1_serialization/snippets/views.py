@@ -9,9 +9,9 @@ from snippets.serializers import SnippetSerializer
 def snippet_list(request):
     # List all code snippets, or create a new snippet.
     if request.method == "GET":
-        snippet = Snippet.objects.all()
-        serializer = SnippetSerializer(snippet)
-        return JsonResponse(serializer)
+        snippets = Snippet.objects.all()
+        serializer = SnippetSerializer(snippets, many=True)
+        return JsonResponse(serializer.data, safe=False)
     elif request.method == "POST":
         data = JSONParser().parse(request)
         serializer = SnippetSerializer(data=data)
