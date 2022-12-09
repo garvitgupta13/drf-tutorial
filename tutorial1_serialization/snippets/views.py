@@ -1,6 +1,6 @@
 from django.contrib.auth.models import User
-from rest_framework import generics, mixins, permissions, renderers
-from rest_framework.decorators import api_view
+from rest_framework import generics, mixins, permissions, renderers, viewsets
+from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
 from snippets.models import Snippet
@@ -20,6 +20,7 @@ def api_root(request, format=None):
     )
 
 
+"""
 class SnippetList(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
     queryset = Snippet.objects.all()
@@ -42,14 +43,50 @@ class SnippetHighlight(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         snippet = self.get_object()
         return Response(snippet.highlighted)
+"""
+# Replace the snippet generic view with SnippetViewSet
+class SnippetViewSet(viewsets.ModelViewSet):
+    """
+    This viewset automatically provides `list`, `create`, `retrieve`,
+    `update` and `destroy` actions.
+
+    Additionally we also provide an extra `highlight` action.
+    """
+
+    queryset = Snippet.objects.all()
+    serializer_class = SnippetSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
+
+    # Custom actions which use the @action decorator will respond to GET requests by default.
+    # We can use the methods argument if we wanted an action that responded to POST requests.
+    @action(
+        detail=True,
+        renderer_classes=[renderers.StaticHTMLRenderer],
+    )
+    def highlight(self, request, *args, **kwargs):
+        snippet = self.get_object()
+        return Response(snippet.highlighted)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
+""""
 class UserList(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
 
 class UserDetail(generics.RetrieveAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+"""
+# Replace the user generic view with UserViewset
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ReadOnlyModelViewSet viewset automatically provides default 'read-only' operations `list` and `retrieve` actions.
+    """
+
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
